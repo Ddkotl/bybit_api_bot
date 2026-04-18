@@ -6,5 +6,6 @@ export const getLastMarketPrice = async (tradingPair: string) => {
     symbol: tradingPair,
   });
   const lastPrice = marketData.result.list[0].lastPrice;
+  console.log(`current price to ${tradingPair} - ${parseFloat(lastPrice)}`);
   return parseFloat(lastPrice);
 };

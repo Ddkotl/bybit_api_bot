@@ -1,14 +1,14 @@
 import { orderLimit } from "./config";
-import { RollbackShortStrategy } from "./strategies/rollback_strategy";
-import { getTradingPairs } from "./modules/get_tradings_pair";
 import { checkOpenPositionsCount } from "./modules/check_open_positions_count";
+import { getTradingPairs } from "./modules/get_tradings_pair";
+import { RollbackShortStrategy } from "./strategies/rollback_strategy";
 
 async function runStrategyLoop() {
   try {
     const tradingPairs = await getTradingPairs();
     const positionsCount = await checkOpenPositionsCount();
     if (positionsCount > orderLimit) {
-      console.log(`Слишком много позиций`);
+      console.log(`Too many positions already open`);
     } else {
       for (const tradingPair of tradingPairs) {
         await RollbackShortStrategy(tradingPair);

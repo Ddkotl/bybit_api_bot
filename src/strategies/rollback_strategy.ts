@@ -4,8 +4,10 @@ import {
   leverage,
   orderLimit,
   riskPercentage,
+  short_founding_rate_ok,
   stopLossRatio,
   takeProfitRatio,
+  week_prise_change,
 } from "../config";
 import { checkOpenPositions } from "../modules/check_open_position";
 import { checkOpenPositionsCount } from "../modules/check_open_positions_count";
@@ -16,25 +18,24 @@ import { getPriceChange } from "../modules/get_price_change";
 import { setLeverage } from "../modules/set_leverage";
 
 export const RollbackShortStrategy = async (tradingPair: string) => {
+  console.log("---------------------------------- ");
+  console.log("---------------------------------- ");
+  console.log("Start checking to pair : ", tradingPair);
   try {
     const founding_rate = await getFoundingRate(tradingPair);
-    if (Number(founding_rate) < -0.0001) {
-      console.log("Ставка финансирования отстой", founding_rate);
+    console.log("founding rate :", founding_rate);
+    if (Number(founding_rate) < short_founding_rate_ok) {
+      console.log("founding rate too bad");
       return;
     }
     const positionsCount = await checkOpenPositionsCount();
     if (positionsCount > orderLimit) {
-      return;
-    }
-    if (!tradingPair.includes("USDT")) {
+      console.log("too many open positions");
       return;
     }
     const hasOpenPosition = await checkOpenPositions(tradingPair);
-
     if (hasOpenPosition) {
-      console.log(
-        `Пропускаем, так как уже есть активная сделка по ${tradingPair}`,
-      );
+      console.log(`Elready exist open position to ${tradingPair}`);
       return;
     }
     const lastPrice = await getLastMarketPrice(tradingPair);
@@ -43,27 +44,17 @@ export const RollbackShortStrategy = async (tradingPair: string) => {
       tradingPair,
       moment().subtract(1, "month").valueOf(),
     );
-    console.log(" month change", priceMonthAgo);
     if (!priceMonthAgo) {
       return;
     }
 
-    const priceDayAgo = await getPriceChange(
-      tradingPair,
-      moment().subtract(1, "day").valueOf(),
-    );
-    console.log("1 day change", priceDayAgo);
-    // const price3dayAgo = await getPriceChange(
-    //   tradingPair,
-    //   moment().subtract(3, "days").valueOf(),
-    // );
     const price7dayAgo = await getPriceChange(
       tradingPair,
       moment().subtract(7, "days").valueOf(),
     );
-    console.log("7 day change", price7dayAgo);
-    // console.log("3 day change", price3dayAgo);
-    if (!priceDayAgo || !price7dayAgo || price7dayAgo < 50) {
+    console.log("7 day change", price7dayAgo, "%");
+    if (!price7dayAgo || price7dayAgo < week_prise_change) {
+      console.log("7 day change too small");
       return;
     }
 
@@ -72,17 +63,8 @@ export const RollbackShortStrategy = async (tradingPair: string) => {
       console.error("Ошибка: баланс недоступен или равен 0.");
       return;
     }
-    const rounded_balance = Math.floor(availableBalance).toString();
-    let balance = "";
-    for (let i = 0; i < rounded_balance.length; i++) {
-      if (i === 0) {
-        balance = balance + rounded_balance[i];
-      }
-      if (i !== 0) {
-        balance = balance + "0";
-      }
-    }
-    const positionSizeInUSD = +balance * riskPercentage * leverage;
+
+    const positionSizeInUSD = +availableBalance * riskPercentage * leverage;
     const positionSize = Math.floor(positionSizeInUSD / lastPrice);
 
     const stopLossPrice = lastPrice * (1 + stopLossRatio);
@@ -102,16 +84,16 @@ export const RollbackShortStrategy = async (tradingPair: string) => {
     const orderResponse = await client.submitOrder({
       category: "linear",
       symbol: tradingPair,
-      side: "Buy",
+      side: "Sell",
       orderType: "Market",
       qty: `${positionSize}`,
       timeInForce: "GTC",
-      takeProfit: stopLossPrice.toFixed(9),
-      stopLoss: takeProfitPrice.toFixed(9),
+      takeProfit: takeProfitPrice.toFixed(9),
+      stopLoss: stopLossPrice.toFixed(9),
     });
 
-    console.log("Шорт-позиция успешно открыта:", orderResponse);
+    console.log("Position open:", JSON.stringify(orderResponse));
   } catch (error) {
-    console.error("Ошибка при выполнении стратегии:", error);
+    console.error("Strategy error:", error);
   }
 };
