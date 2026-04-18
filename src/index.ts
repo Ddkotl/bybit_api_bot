@@ -1,18 +1,18 @@
-import { orderLimit } from "./config";
-import { checkOpenPositionsCount } from "./modules/check_open_positions_count";
 import { getTradingPairs } from "./modules/get_tradings_pair";
-import { RollbackShortStrategy } from "./strategies/rollback_strategy";
+import { BybitBroker } from "./strategies/Brocker";
+import { BybitMarketData } from "./strategies/MarketDataProvider";
+import { RollbackShortStrategy } from "./strategies/RollbackShortStrategy";
 
 async function runStrategyLoop() {
   try {
     const tradingPairs = await getTradingPairs();
-    const positionsCount = await checkOpenPositionsCount();
-    if (positionsCount > orderLimit) {
-      console.log(`Too many positions already open`);
-    } else {
-      for (const tradingPair of tradingPairs) {
-        await RollbackShortStrategy(tradingPair);
-      }
+    const strategy = new RollbackShortStrategy(
+      new BybitMarketData(),
+      new BybitBroker(),
+    );
+
+    for (const tradingPair of tradingPairs) {
+      await strategy.execute(tradingPair);
     }
   } catch (error) {
     console.error("Ошибка в стратегии:", error);
