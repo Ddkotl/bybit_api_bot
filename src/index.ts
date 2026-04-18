@@ -7,8 +7,8 @@ async function runStrategyLoop() {
   try {
     const tradingPairs = await getTradingPairs();
     const strategy = new RollbackShortStrategy(
-      new BybitMarketData(),
       new BybitBroker(),
+      new BybitMarketData(),
     );
 
     for (const tradingPair of tradingPairs) {

@@ -25,11 +25,11 @@ export class BybitBroker implements Broker {
   async submitShortOrder(params: {
     symbol: string;
     qty: number;
-    price: number;
+    entryPrice: number;
     stopLoss: number;
     takeProfit: number;
-  }) {
-    return client.submitOrder({
+  }): Promise<void> {
+    await client.submitOrder({
       category: "linear",
       symbol: params.symbol,
       side: "Sell",
@@ -38,5 +38,15 @@ export class BybitBroker implements Broker {
       stopLoss: String(params.stopLoss),
       takeProfit: String(params.takeProfit),
     });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async updateMarket(_candle: unknown, _symbol: string): Promise<void> {
+    // Stub for live broker
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async closeAllPositions(_price: number): Promise<void> {
+    // Stub for live broker
   }
 }
