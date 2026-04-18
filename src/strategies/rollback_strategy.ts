@@ -1,5 +1,4 @@
-import { checkOpenPositions } from "../modules/check_open_position";
-import { getLastMarketPrice } from "../modules/get_last_market_price";
+import moment from "moment";
 import { client } from "../api/bybit_api_client_v5";
 import {
   leverage,
@@ -8,12 +7,13 @@ import {
   stopLossRatio,
   takeProfitRatio,
 } from "../config";
-import { getAvalibleBalance } from "../modules/get_avalible_ballance";
-import { setLeverage } from "../modules/set_leverage";
+import { checkOpenPositions } from "../modules/check_open_position";
 import { checkOpenPositionsCount } from "../modules/check_open_positions_count";
-import { getPriceChange } from "../modules/get_price_change";
-import moment from "moment";
+import { getAvalibleBalance } from "../modules/get_avalible_ballance";
 import { getFoundingRate } from "../modules/get_founding_rate";
+import { getLastMarketPrice } from "../modules/get_last_market_price";
+import { getPriceChange } from "../modules/get_price_change";
+import { setLeverage } from "../modules/set_leverage";
 
 export const RollbackShortStrategy = async (tradingPair: string) => {
   try {
@@ -63,7 +63,7 @@ export const RollbackShortStrategy = async (tradingPair: string) => {
     );
     console.log("7 day change", price7dayAgo);
     // console.log("3 day change", price3dayAgo);
-    if (!priceDayAgo || !price7dayAgo || price7dayAgo < 90) {
+    if (!priceDayAgo || !price7dayAgo || price7dayAgo < 50) {
       return;
     }
 
@@ -102,12 +102,12 @@ export const RollbackShortStrategy = async (tradingPair: string) => {
     const orderResponse = await client.submitOrder({
       category: "linear",
       symbol: tradingPair,
-      side: "Sell",
+      side: "Buy",
       orderType: "Market",
       qty: `${positionSize}`,
       timeInForce: "GTC",
-      stopLoss: stopLossPrice.toFixed(6),
-      takeProfit: takeProfitPrice.toFixed(6),
+      stopLoss: stopLossPrice.toFixed(9),
+      takeProfit: takeProfitPrice.toFixed(9),
     });
 
     console.log("Шорт-позиция успешно открыта:", orderResponse);
