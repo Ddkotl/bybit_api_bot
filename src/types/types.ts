@@ -12,15 +12,20 @@ export interface Broker {
   submitShortOrder(params: {
     symbol: string;
     qty: number;
+    price: number;
     stopLoss: number;
     takeProfit: number;
   }): Promise<APIResponseV3WithTime<OrderResultV5>>;
 }
 
 export interface MarketDataProvider {
-  getFundingRate(symbol: string): Promise<number>;
+  getFundingRate(symbol: string, timestamp?: number): Promise<number>;
 
-  getLastPrice(symbol: string): Promise<number>;
+  getLastPrice(symbol: string, timestamp?: number): Promise<number>;
 
-  getPriceChange(symbol: string, timestamp: number): Promise<number | null>;
+  getPriceChange(
+    symbol: string,
+    startTimestamp: number,
+    endTimestamp?: number,
+  ): Promise<number | null>;
 }

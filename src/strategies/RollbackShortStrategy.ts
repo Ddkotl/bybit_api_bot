@@ -16,11 +16,14 @@ export class RollbackShortStrategy {
     private broker: Broker,
   ) {}
 
-  async execute(tradingPair: string) {
+  async execute(tradingPair: string, timestamp?: number) {
     console.log("---------------------------------- ");
     console.log("---------------------------------- ");
     console.log("Start checking to pair : ", tradingPair);
-    const fundingRate = await this.market.getFundingRate(tradingPair);
+    const fundingRate = await this.market.getFundingRate(
+      tradingPair,
+      timestamp,
+    );
 
     if (
       fundingRate < short_founding_rate_ok ||
@@ -34,11 +37,14 @@ export class RollbackShortStrategy {
 
     if (await this.broker.hasOpenPosition(tradingPair)) return;
 
-    const lastPrice = await this.market.getLastPrice(tradingPair);
+    const lastPrice = await this.market.getLastPrice(tradingPair, timestamp);
 
     const weekChange = await this.market.getPriceChange(
       tradingPair,
-      moment().subtract(7, "days").valueOf(),
+      timestamp
+        ? timestamp - 7 * 24 * 60 * 60 * 1000
+        : moment().subtract(7, "days").valueOf(),
+      timestamp,
     );
 
     if (weekChange === null) return;
@@ -60,6 +66,7 @@ export class RollbackShortStrategy {
     const order = await this.broker.submitShortOrder({
       symbol: tradingPair,
       qty,
+      price: lastPrice,
       stopLoss,
       takeProfit,
     });
