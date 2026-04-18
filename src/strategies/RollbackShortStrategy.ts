@@ -22,9 +22,15 @@ export class RollbackShortStrategy {
     console.log("Start checking to pair : ", tradingPair);
     const fundingRate = await this.market.getFundingRate(tradingPair);
 
-    if (fundingRate < short_founding_rate_ok) return;
+    if (
+      fundingRate < short_founding_rate_ok ||
+      fundingRate < short_founding_rate_ok
+    ) {
+      console.log("Funding rate too low for shorting: ", fundingRate);
+      return;
+    }
 
-    if ((await this.broker.openPositionsCount()) > orderLimit) return;
+    if ((await this.broker.openPositionsCount()) >= orderLimit) return;
 
     if (await this.broker.hasOpenPosition(tradingPair)) return;
 
@@ -35,7 +41,7 @@ export class RollbackShortStrategy {
       moment().subtract(7, "days").valueOf(),
     );
 
-    if (!weekChange) return;
+    if (weekChange === null) return;
 
     if (weekChange < week_prise_change) return;
 
@@ -51,11 +57,12 @@ export class RollbackShortStrategy {
 
     await this.broker.setLeverage(tradingPair, leverage);
 
-    await this.broker.submitShortOrder({
+    const order = await this.broker.submitShortOrder({
       symbol: tradingPair,
       qty,
       stopLoss,
       takeProfit,
     });
+    if (!order) return;
   }
 }
