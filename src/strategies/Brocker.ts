@@ -1,3 +1,4 @@
+import { APIResponseV3WithTime, OrderResultV5 } from "bybit-api";
 import { client } from "../api/bybit_api_client_v5";
 import { checkOpenPositions } from "../modules/check_open_position";
 import { checkOpenPositionsCount } from "../modules/check_open_positions_count";
@@ -25,11 +26,10 @@ export class BybitBroker implements Broker {
   async submitShortOrder(params: {
     symbol: string;
     qty: number;
-    entryPrice: number;
     stopLoss: number;
     takeProfit: number;
-  }): Promise<void> {
-    await client.submitOrder({
+  }): Promise<APIResponseV3WithTime<OrderResultV5>> {
+    return await client.submitOrder({
       category: "linear",
       symbol: params.symbol,
       side: "Sell",

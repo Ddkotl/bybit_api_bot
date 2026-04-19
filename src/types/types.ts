@@ -1,6 +1,6 @@
-export interface MarketDataProvider {
-  getLastPrice(symbol: string, timestamp?: number): Promise<number>;
+import { APIResponseV3WithTime, OrderResultV5 } from "bybit-api";
 
+export interface MarketDataProvider {
   getPriceChange(
     symbol: string,
     startTimestamp: number,
@@ -30,10 +30,9 @@ export interface Broker {
   submitShortOrder(params: {
     symbol: string;
     qty: number;
-    entryPrice: number;
     stopLoss: number;
     takeProfit: number;
-  }): Promise<void>;
+  }): Promise<APIResponseV3WithTime<OrderResultV5> | void>;
 
   updateMarket(candle: Candle, symbol: string): Promise<void>;
 

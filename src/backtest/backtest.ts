@@ -1,8 +1,8 @@
 import { getTradingPairs } from "../modules/get_tradings_pair";
 import { loadHistoricalCandles } from "../modules/loadHistoricalCandles";
+import { BybitMarketData } from "../strategies/MarketDataProvider";
 import { RollbackShortStrategy } from "../strategies/RollbackShortStrategy";
 import { SimulatedBroker } from "./SimulatedBroker";
-import { HistoricalMarketData } from "./HistoricalMarketData";
 
 async function backtest() {
   console.log("Starting backtest...");
@@ -10,7 +10,7 @@ async function backtest() {
   const pairs = await getTradingPairs();
 
   const broker = new SimulatedBroker(10000);
-  const market = new HistoricalMarketData();
+  const market = new BybitMarketData();
 
   const strategy = new RollbackShortStrategy(broker, market);
 

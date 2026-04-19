@@ -14,46 +14,24 @@ export class RollbackShortStrategy {
 
   constructor(
     private broker: Broker,
-    private market?: MarketDataProvider,
+    private market: MarketDataProvider,
   ) {}
 
-  async execute(candleOrSymbol: Candle | string, symbol?: string) {
-    let tradingPair: string;
-    let lastPrice: number;
-    let weekChange = 0;
-
-    if (typeof candleOrSymbol === "string") {
-      // Live mode
-      if (!this.market) throw new Error("Market required for live mode");
-      tradingPair = candleOrSymbol;
-      lastPrice = await this.market.getLastPrice(tradingPair);
-      const weekStart = Date.now() - RollbackShortStrategy.WEEK_MS;
-      const priceChange = await this.market.getPriceChange(
-        tradingPair,
-        weekStart,
-      );
-      weekChange = priceChange ?? 0;
-    } else {
-      // Backtest mode
-      const candle = candleOrSymbol;
-      tradingPair = symbol!;
-      lastPrice = candle.close;
-
-      if (this.market) {
-        const weekStart = candle.timestamp - RollbackShortStrategy.WEEK_MS;
-        const priceChange = await this.market.getPriceChange(
-          tradingPair,
-          weekStart,
-          candle.timestamp,
-        );
-        weekChange = priceChange ?? 0;
-      }
-    }
-
+  async execute(candle: Candle, tradingPair: string) {
+    const lastPrice = candle.high;
+    const weekAgo = candle.timestamp - RollbackShortStrategy.WEEK_MS;
+    const priceChange = await this.market.getPriceChange(
+      tradingPair,
+      candle.timestamp,
+      weekAgo,
+    );
     if ((await this.broker.openPositionsCount()) >= orderLimit) return;
-
     if (await this.broker.hasOpenPosition(tradingPair)) return;
 
+    const weekChange = priceChange ?? 0;
+    console.log(
+      `Price change for ${tradingPair} over the last week: ${weekChange}%`,
+    );
     if (weekChange < week_prise_change) return;
 
     const balance = await this.broker.getAvailableBalance();
@@ -66,12 +44,15 @@ export class RollbackShortStrategy {
     const takeProfit = lastPrice * (1 - takeProfitRatio);
 
     await this.broker.setLeverage(tradingPair, leverage);
-    await this.broker.submitShortOrder({
+    const result = await this.broker.submitShortOrder({
       symbol: tradingPair,
       qty,
-      entryPrice: lastPrice,
       stopLoss,
       takeProfit,
     });
+    console.log(JSON.stringify(result));
+    console.log(
+      `Submitted short order for ${tradingPair}: qty=${qty}, entry=${lastPrice}, stopLoss=${stopLoss}, takeProfit=${takeProfit}`,
+    );
   }
 }
