@@ -26,6 +26,7 @@ export class BybitBroker implements Broker {
   async submitShortOrder(params: {
     symbol: string;
     qty: number;
+    entryPrice?: number;
     stopLoss: number;
     takeProfit: number;
   }): Promise<APIResponseV3WithTime<OrderResultV5>> {

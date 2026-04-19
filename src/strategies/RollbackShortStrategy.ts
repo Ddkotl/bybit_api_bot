@@ -38,7 +38,7 @@ export class RollbackShortStrategy {
     const positionUsd = balance * riskPercentage * leverage;
     const qty = Math.max(1, Math.floor(positionUsd / Math.max(lastPrice, 1)));
 
-    if (qty < 1) return;
+    if (isNaN(qty) || qty <= 0) return;
 
     const stopLoss = lastPrice * (1 + stopLossRatio);
     const takeProfit = lastPrice * (1 - takeProfitRatio);

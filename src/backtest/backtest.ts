@@ -17,7 +17,7 @@ async function backtest() {
   for (const symbol of pairs.slice(0, 3)) {
     console.log("\nPAIR:", symbol);
 
-    const candles = await loadHistoricalCandles(symbol, 300);
+    const candles = await loadHistoricalCandles(symbol, 10);
     if (!candles.length) {
       console.log(`No candles for ${symbol}, skip`);
       continue;
@@ -32,12 +32,45 @@ async function backtest() {
   }
 
   const trades = broker.getTrades();
+  const finalBalance = broker.getFinalBalance();
+  const totalPnL = finalBalance - 10000;
 
-  const pnl = trades.reduce((a, t) => a + t.pnl, 0);
+  // Расчет метрик
+  const wins = trades.filter((t) => t.pnl > 0);
+  const losses = trades.filter((t) => t.pnl <= 0);
+  const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
 
-  console.log("\nRESULTS:");
-  console.log("Trades:", trades.length);
-  console.log("PnL:", pnl);
+  const grossProfit = wins.reduce((sum, t) => sum + t.pnl, 0);
+  const grossLoss = Math.abs(losses.reduce((sum, t) => sum + t.pnl, 0));
+  const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
+
+  console.log("-----------------------------------------");
+  console.log("📊 BACKTEST REPORT");
+  console.log("-----------------------------------------");
+  console.log(`Starting Balance: 10000`);
+  console.log(`Final Balance:    ${finalBalance.toFixed(2)}`);
+  console.log(
+    `Total PnL:        ${totalPnL.toFixed(2)} (${((totalPnL / 10000) * 100).toFixed(2)}%)`,
+  );
+  console.log("-----------------------------------------");
+  console.log(`Total Trades:     ${trades.length}`);
+  console.log(`Win Rate:         ${winRate.toFixed(2)}%`);
+  console.log(`Profit Factor:    ${profitFactor.toFixed(2)}`);
+  console.log(
+    `Avg Trade PnL:    ${(totalPnL / (trades.length || 1)).toFixed(2)}`,
+  );
+  console.log("-----------------------------------------");
+
+  if (trades.length > 0) {
+    const bestTrade = [...trades].sort((a, b) => b.pnl - a.pnl)[0];
+    const worstTrade = [...trades].sort((a, b) => a.pnl - b.pnl)[0];
+    console.log(
+      `Best Trade:       +${bestTrade.pnl.toFixed(2)} (${bestTrade.symbol})`,
+    );
+    console.log(
+      `Worst Trade:      ${worstTrade.pnl.toFixed(2)} (${worstTrade.symbol})`,
+    );
+  }
 }
 
 backtest();
