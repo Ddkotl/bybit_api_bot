@@ -14,10 +14,10 @@ async function backtest() {
 
   const strategy = new RollbackShortStrategy(broker, market);
 
-  for (const symbol of pairs.slice(0, 3)) {
+  for (const symbol of pairs.slice(0, 20)) {
     console.log("\nPAIR:", symbol);
 
-    const candles = await loadHistoricalCandles(symbol, 10);
+    const candles = await loadHistoricalCandles(symbol, 30);
     if (!candles.length) {
       console.log(`No candles for ${symbol}, skip`);
       continue;
