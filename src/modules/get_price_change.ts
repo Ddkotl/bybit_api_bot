@@ -28,7 +28,13 @@ export async function getPriceChange(
 
     const priceAtStart = parseFloat(candleStart.result.list[0][4]);
     const priceAtEnd = parseFloat(candleEnd.result.list[0][4]);
-    if (priceAtStart <= 0 || priceAtEnd <= 0) return null;
+    if (
+      isNaN(priceAtStart) ||
+      isNaN(priceAtEnd) ||
+      priceAtStart <= 0 ||
+      priceAtEnd <= 0
+    )
+      return null;
     const priceChangePercent =
       ((priceAtEnd - priceAtStart) / priceAtStart) * 100;
 

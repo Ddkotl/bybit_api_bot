@@ -20,18 +20,30 @@ export async function loadHistoricalCandles(
       limit,
     });
     if (!response.result?.list?.length) break;
-    const newCandles = response.result.list.map((c: string[]) => ({
-      timestamp: Number(c[0]),
-      open: Number(c[1]),
-      high: Number(c[2]),
-      low: Number(c[3]),
-      close: Number(c[4]),
-      volume: Number(c[5]),
-      turnover: Number(c[6]),
-    }));
+    const newCandles = response.result.list
+      .map((c: string[]) => ({
+        timestamp: Number(c[0]),
+        open: Number(c[1]),
+        high: Number(c[2]),
+        low: Number(c[3]),
+        close: Number(c[4]),
+        volume: Number(c[5]),
+        turnover: Number(c[6]),
+      }))
+      .filter(
+        (candle) =>
+          !isNaN(candle.open) &&
+          !isNaN(candle.high) &&
+          !isNaN(candle.low) &&
+          !isNaN(candle.close) &&
+          !isNaN(candle.volume),
+      );
     candles.push(...newCandles);
-    startTime =
-      newCandles[newCandles.length - 1].timestamp + candle_interval * 60 * 1000;
+    if (newCandles.length > 0) {
+      startTime =
+        newCandles[newCandles.length - 1].timestamp +
+        candle_interval * 60 * 1000;
+    }
     if (newCandles.length < limit) break;
   }
   return candles.slice(0, hours);

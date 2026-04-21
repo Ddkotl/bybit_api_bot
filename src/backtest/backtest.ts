@@ -14,13 +14,16 @@ async function backtest() {
 
   const strategy = new RollbackShortStrategy(broker, market);
 
-  for (const symbol of pairs.slice(0, 20)) {
+  // Обрабатывать пары параллельно с задержкой 1 сек между запусками загрузки данных
+  const processPair = async (symbol: string, delay: number) => {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
     console.log("\nPAIR:", symbol);
 
     const candles = await loadHistoricalCandles(symbol, 30);
     if (!candles.length) {
       console.log(`No candles for ${symbol}, skip`);
-      continue;
+      return;
     }
 
     for (const candle of candles) {
@@ -29,7 +32,12 @@ async function backtest() {
     }
 
     await broker.closeAllPositions(candles[candles.length - 1].close);
-  }
+  };
+
+  const promises = pairs.map((symbol, index) =>
+    processPair(symbol, index * 1000),
+  );
+  await Promise.all(promises);
 
   const trades = broker.getTrades();
   const finalBalance = broker.getFinalBalance();
@@ -42,7 +50,12 @@ async function backtest() {
 
   const grossProfit = wins.reduce((sum, t) => sum + t.pnl, 0);
   const grossLoss = Math.abs(losses.reduce((sum, t) => sum + t.pnl, 0));
-  const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
+  const profitFactor =
+    grossLoss === 0
+      ? grossProfit > 0
+        ? Infinity
+        : 0
+      : grossProfit / grossLoss;
 
   console.log("-----------------------------------------");
   console.log("📊 BACKTEST REPORT");
@@ -55,9 +68,8 @@ async function backtest() {
   console.log("-----------------------------------------");
   console.log(`Total Trades:     ${trades.length}`);
   console.log(`Win Rate:         ${winRate.toFixed(2)}%`);
-  console.log(`Profit Factor:    ${profitFactor.toFixed(2)}`);
   console.log(
-    `Avg Trade PnL:    ${(totalPnL / (trades.length || 1)).toFixed(2)}`,
+    `Profit Factor:    ${isNaN(profitFactor) ? "N/A" : profitFactor.toFixed(2)}`,
   );
   console.log("-----------------------------------------");
 

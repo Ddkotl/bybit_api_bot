@@ -65,6 +65,16 @@ export class SimulatedBroker implements Broker {
       );
       return;
     }
+    if (
+      isNaN(params.entryPrice) ||
+      isNaN(params.stopLoss) ||
+      isNaN(params.takeProfit)
+    ) {
+      console.error(
+        `[!] Ошибка: Попытка открыть Short ${params.symbol} с NaN в ценах`,
+      );
+      return;
+    }
     const cost = params.qty * params.entryPrice;
 
     if (cost > this.balance) return;
@@ -104,12 +114,20 @@ export class SimulatedBroker implements Broker {
   }
 
   async closeAllPositions(price: number): Promise<void> {
+    if (isNaN(price)) {
+      console.error("closeAllPositions: price is NaN, skipping");
+      return;
+    }
     for (let i = this.positions.length - 1; i >= 0; i--) {
       this.executeClose(i, price, "Force Close");
     }
   }
 
   private executeClose(index: number, exitPrice: number, reason: string) {
+    if (isNaN(exitPrice)) {
+      console.error("executeClose: exitPrice is NaN, skipping");
+      return;
+    }
     const p = this.positions[index];
     const pnl = (p.entryPrice - exitPrice) * p.qty; // Short PnL formula
 
